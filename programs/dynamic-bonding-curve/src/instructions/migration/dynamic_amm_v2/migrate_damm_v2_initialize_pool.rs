@@ -49,7 +49,7 @@ pub struct MigrateDammV2Ctx<'info> {
     // pub damm_config: AccountLoader<'info, damm_v2::accounts::Config>,
     /// CHECK: position nft mint for partner
     #[account(mut)]
-    pub first_position_nft_mint: UncheckedAccount<'info>,
+    pub first_position_nft_mint: Signer<'info>,
 
     /// CHECK: position nft account for partner
     #[account(mut)]
@@ -61,7 +61,7 @@ pub struct MigrateDammV2Ctx<'info> {
 
     /// CHECK: position nft mint for owner
     #[account(mut, constraint = first_position_nft_mint.key().ne(&second_position_nft_mint.key()))]
-    pub second_position_nft_mint: Option<UncheckedAccount<'info>>,
+    pub second_position_nft_mint: Option<Signer<'info>>,
 
     /// CHECK: position nft account for owner
     #[account(mut)]
