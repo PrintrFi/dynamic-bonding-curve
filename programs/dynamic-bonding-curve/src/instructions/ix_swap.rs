@@ -19,7 +19,7 @@ use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 
 use crate::instruction::Swap as SwapInstruction;
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, PartialEq, Eq)]
 pub struct SwapParameters {
     pub amount_in: u64,
     pub minimum_amount_out: u64,
