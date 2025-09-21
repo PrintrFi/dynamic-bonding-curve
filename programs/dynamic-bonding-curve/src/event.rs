@@ -84,7 +84,6 @@ pub struct EvtInitializePool {
 }
 
 #[event]
-#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EvtSwap {
     pub pool: Pubkey,
     pub config: Pubkey,
