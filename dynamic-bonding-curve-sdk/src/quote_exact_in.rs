@@ -2,7 +2,7 @@ use anyhow::{ensure, Context, Result};
 use dynamic_bonding_curve::{
     activation_handler::ActivationType,
     params::swap::TradeDirection,
-    state::{fee::FeeMode, PoolConfig, SwapResult, VirtualPool},
+    state::{fee::FeeMode, PoolConfig, SwapResult2, VirtualPool},
 };
 
 pub fn quote_exact_in(
@@ -13,9 +13,7 @@ pub fn quote_exact_in(
     current_slot: u64,
     in_amount: u64,
     has_referral: bool,
-) -> Result<SwapResult> {
-    let mut pool = *pool;
-
+) -> Result<SwapResult2> {
     ensure!(
         !pool.is_curve_complete(config.migration_quote_threshold),
         "virtual pool is completed"
@@ -23,7 +21,6 @@ pub fn quote_exact_in(
 
     ensure!(in_amount > 0, "amount is zero");
 
-    pool.update_pre_swap(config, current_timestamp)?;
     let activation_type =
         ActivationType::try_from(config.activation_type).context("invalid activation type")?;
     let current_point = match activation_type {
@@ -37,8 +34,19 @@ pub fn quote_exact_in(
         TradeDirection::QuoteToBase
     };
     let fee_mode = &FeeMode::get_fee_mode(config.collect_fee_mode, trade_direction, has_referral)?;
-    let swap_result =
-        pool.get_swap_result(&config, in_amount, fee_mode, trade_direction, current_point)?;
+
+    let swap_result = pool.get_swap_result_from_exact_input(
+        config,
+        in_amount,
+        fee_mode,
+        trade_direction,
+        current_point,
+    )?;
+
+    ensure!(
+        swap_result.amount_left <= config.get_max_swallow_quote_amount()?,
+        "Amount left is over a threshold"
+    );
 
     Ok(swap_result)
 }
