@@ -1032,7 +1032,7 @@ impl VirtualPool {
 }
 
 /// Encodes all results of swapping
-#[derive(Debug, PartialEq, AnchorDeserialize, AnchorSerialize, Copy, Clone)]
+#[derive(Debug, PartialEq, AnchorDeserialize, AnchorSerialize, Copy, Clone, Eq)]
 pub struct SwapResult {
     pub actual_input_amount: u64, // if fees are on input, this can be different that the original input_amount.
     pub output_amount: u64,
