@@ -1,16 +1,14 @@
-use anchor_spl::token::{Burn, Token, TokenAccount};
-
+use crate::migration_handler::MigrationHandler;
 use crate::{
     const_pda,
     cpi_checker::cpi_with_account_lamport_and_owner_checking,
+    migration_handler::CompoundingLiquidity,
     params::fee_parameters::to_bps,
     safe_math::SafeMath,
-    state::{
-        MigrationAmount, MigrationFeeOption, MigrationOption, MigrationProgress, PoolConfig,
-        VirtualPool,
-    },
+    state::{MigrationFeeOption, MigrationOption, MigrationProgress, PoolConfig, VirtualPool},
     *,
 };
+use anchor_spl::token::{Burn, Token, TokenAccount};
 
 #[derive(Accounts)]
 pub struct MigrateMeteoraDammCtx<'info> {
@@ -237,21 +235,58 @@ pub fn handle_migrate_meteora_damm<'info>(
         migration_option == MigrationOption::MeteoraDamm,
         PoolError::InvalidMigrationOption
     );
-    let base_reserve = config.migration_base_threshold;
-    let MigrationAmount { quote_amount, .. } = config.get_migration_quote_amount_for_config()?;
 
-    ctx.accounts
-        .create_pool(base_reserve, quote_amount, const_pda::pool_authority::BUMP)?;
+    let liquidity_handler = Box::new(CompoundingLiquidity {
+        migration_sqrt_price: config.migration_sqrt_price,
+    });
+
+    let initial_base_vault_amount = ctx.accounts.base_vault.amount;
+    let protocol_and_partner_base_fee = virtual_pool.get_protocol_and_trading_base_fee()?;
+    let (included_protocol_fee_migration_base_amount, included_protocol_fee_migration_quote_amount) =
+        liquidity_handler.get_included_protocol_fee_migration_amounts_2(
+            config.migration_base_threshold,
+            config.migration_quote_threshold,
+            config.migration_fee_percentage,
+            initial_base_vault_amount.safe_sub(protocol_and_partner_base_fee)?,
+        )?;
+
+    let (protocol_migration_base_fee, protocol_migration_quote_fee) = liquidity_handler
+        .get_migration_protocol_fees(
+            included_protocol_fee_migration_base_amount,
+            included_protocol_fee_migration_quote_amount,
+            virtual_pool.protocol_liquidity_migration_fee_bps,
+        )?;
+
+    virtual_pool.save_protocol_liquidity_migration_fee(
+        protocol_migration_base_fee,
+        protocol_migration_quote_fee,
+    );
+
+    let excluded_protocol_fee_migration_base_amount =
+        included_protocol_fee_migration_base_amount.safe_sub(protocol_migration_base_fee)?;
+    let excluded_protocol_fee_migration_quote_amount =
+        included_protocol_fee_migration_quote_amount.safe_sub(protocol_migration_quote_fee)?;
+
+    ctx.accounts.create_pool(
+        excluded_protocol_fee_migration_base_amount,
+        excluded_protocol_fee_migration_quote_amount,
+        const_pda::pool_authority::BUMP,
+    )?;
 
     virtual_pool.update_after_create_pool();
 
     // burn the rest of token in pool authority after migrated amount and fee
     ctx.accounts.base_vault.reload()?;
+
+    let non_burnable_amount = virtual_pool
+        .get_protocol_and_trading_base_fee()?
+        .safe_add(protocol_migration_base_fee)?;
+
     let left_base_token = ctx
         .accounts
         .base_vault
         .amount
-        .safe_sub(virtual_pool.get_protocol_and_trading_base_fee()?)?;
+        .safe_sub(non_burnable_amount)?;
 
     let burnable_amount = config.get_burnable_amount_post_migration(left_base_token)?;
     if burnable_amount > 0 {
@@ -272,8 +307,11 @@ pub fn handle_migrate_meteora_damm<'info>(
 
     let lp_minted_amount = anchor_spl::token::accessor::amount(&ctx.accounts.virtual_pool_lp)?;
 
-    let lp_distribution = config.get_lp_distribution(lp_minted_amount)?;
-    migration_metadata.set_lp_minted(ctx.accounts.lp_mint.key(), &lp_distribution);
+    let liquidity_distribution = config.get_liquidity_distribution(lp_minted_amount.into())?;
+    migration_metadata.set_liquidity_token_minted(
+        ctx.accounts.lp_mint.key(),
+        &liquidity_distribution.to_liquidity_distribution_damm_v1()?,
+    );
     virtual_pool.set_migration_progress(MigrationProgress::CreatedPool.into());
 
     // TODO emit event

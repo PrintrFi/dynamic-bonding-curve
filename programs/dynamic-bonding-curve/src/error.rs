@@ -1,5 +1,6 @@
 //! Error module includes error messages and codes of the program
 use anchor_lang::prelude::*;
+use protocol_zap::error::ProtozolZapError;
 
 /// Error messages and codes of the program
 #[error_code]
@@ -53,7 +54,7 @@ pub enum PoolError {
     #[msg("Invalid migration option")]
     InvalidMigrationOption,
 
-    #[msg("Invalid activation type")]
+    #[msg("Invalid token decimals")]
     InvalidTokenDecimals,
 
     #[msg("Invalid token type")]
@@ -104,8 +105,8 @@ pub enum PoolError {
     #[msg("Invalid leftover address")]
     InvalidLeftoverAddress,
 
-    #[msg("Swap amount is over a threshold")]
-    SwapAmountIsOverAThreshold,
+    #[msg("Liquidity in bonding curve is insufficient")]
+    InsufficientLiquidity,
 
     #[msg("Invalid fee scheduler")]
     InvalidFeeScheduler,
@@ -157,4 +158,72 @@ pub enum PoolError {
 
     #[msg("Account invariant violation")]
     AccountInvariantViolation,
+
+    #[msg("Invalid pool creation fee")]
+    InvalidPoolCreationFee,
+
+    #[msg("Pool creation fee has been claimed")]
+    PoolCreationFeeHasBeenClaimed,
+
+    #[msg("Not permit to do this action")]
+    Unauthorized,
+
+    #[msg("Pool creation fee is zero")]
+    ZeroPoolCreationFee,
+
+    #[msg("Invalid migration locked liquidity")]
+    InvalidMigrationLockedLiquidity,
+
+    #[msg("Invalid fee market cap scheduler")]
+    InvalidFeeMarketCapScheduler,
+
+    #[msg("Fail to validate first swap with minimum fee")]
+    FirstSwapValidationFailed,
+
+    #[msg("Incorrect ATA")]
+    IncorrectATA,
+
+    #[msg("Pool has insufficient lamports to perform the operation")]
+    InsufficientPoolLamports,
+
+    #[msg("Invalid permission")]
+    InvalidPermission,
+
+    #[msg("Invalid withdraw protocol fee zap accounts")]
+    InvalidWithdrawProtocolFeeZapAccounts,
+
+    #[msg("SOL,USDC protocol fee cannot be withdrawn via zap")]
+    MintRestrictedFromZap,
+
+    #[msg("Invalid zap out parameters")]
+    InvalidZapOutParameters,
+
+    #[msg("CPI disabled")]
+    CpiDisabled,
+
+    #[msg("Missing zap out instruction")]
+    MissingZapOutInstruction,
+
+    #[msg("Invalid zap accounts")]
+    InvalidZapAccounts,
+
+    #[msg("Invalid compounding parameters")]
+    InvalidCompoundingParameters,
+}
+
+impl From<ProtozolZapError> for PoolError {
+    fn from(e: ProtozolZapError) -> Self {
+        match e {
+            ProtozolZapError::MathOverflow => PoolError::MathOverflow,
+            ProtozolZapError::InvalidZapOutParameters => PoolError::InvalidZapOutParameters,
+            ProtozolZapError::TypeCastFailed => PoolError::TypeCastFailed,
+            ProtozolZapError::MissingZapOutInstruction => PoolError::MissingZapOutInstruction,
+            ProtozolZapError::InvalidWithdrawProtocolFeeZapAccounts => {
+                PoolError::InvalidWithdrawProtocolFeeZapAccounts
+            }
+            ProtozolZapError::MintRestrictedFromZap => PoolError::MintRestrictedFromZap,
+            ProtozolZapError::CpiDisabled => PoolError::CpiDisabled,
+            ProtozolZapError::InvalidZapAccounts => PoolError::InvalidZapAccounts,
+        }
+    }
 }

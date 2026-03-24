@@ -22,11 +22,23 @@ export const DAMM_V2_PROGRAM_ID = new PublicKey(
 );
 
 export const TREASURY = new PublicKey(
-  "4EWqcx3aNZmMetCnxwLYwyNjan6XLGp3Ca2W316vrSjv"
+  "6aYhxiNGmG8AyU25rh2R7iFu4pBrqnQHpNUGhmsEXRcm"
 );
 
 export const LOCKER_PROGRAM_ID = new PublicKey(
   "LocpQgucEQHbqNABEYvBvwoxCPsSbG91A1QaQhQQqjn"
+);
+
+export const ZAP_PROGRAM_ID = new PublicKey(
+  "zapvX9M3uf5pvy4wRPAbQgdQsM1xmuiFnkfHKPvwMiz"
+);
+
+export const JUPITER_V6_PROGRAM_ID = new PublicKey(
+  "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4"
+);
+
+export const JUP_V6_EVENT_AUTHORITY = new PublicKey(
+  "D8cy77BBepLMngZx6ZukaTff5hCt1HrWyKk3Hnd9oitf"
 );
 
 export const BASIS_POINT_MAX = 10_000;

@@ -21,6 +21,77 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking Changes
 
+## dynamic_bonding_curve [0.1.10] [PR #174](https://github.com/MeteoraAg/dynamic-bonding-curve/pull/174)
+
+### Added
+
+- Add new endpoint `create_operator_account` and `close_operator_account` that allows admin to manage different operator accounts.
+- Add new account `Operator`, that would stores `whitelisted_address` as well as their operational permissions
+- Add new endpoint `zap_protocol_fee` that allow operator to claim protocol fees and zap out to SOL/USDC or other token in pool and send to treasury address
+- Add support for damm-v2 Compounding `collect_fee_mode`. This can be enabled through the `create_config` endpoint by passing `migrated_pool_fee.collect_fee_mode: 2` and `compounding_fee_bps: 1-10_000` field in `ConfigParameters`
+
+### Changed
+
+- When migrate to damm-v2, instead of using external accounts for vesting, now we will use position itself, that would save 2 accounts for damm-v2 migration instruction.
+
+### Removed
+
+- Removed the `create_claim_protocol_fee_operator` endpoint in favor of `create_operator_account`, which can create an operator account configured with permissions, including claiming protocol fees.
+
+## dynamic_bonding_curve [0.1.9] [PR #165](https://github.com/MeteoraAg/dynamic-bonding-curve/pull/165)
+
+### Added
+
+- Added 2 new field `migrated_pool_base_fee_mode` and `MigratedPoolMarketCapFeeSchedulerParams` in `create_config` endpoint to allow user to create config with DAMM v2 migration with market cap fee scheduler.
+- Added field `enable_first_swap_with_min_fee` in `create_config` endpoint to allow user to initialize pool and swap in single transaction without any anti sniper suite fee.
+
+### Changed
+
+- Endpoint `swap` and `swap2` require sysvar instruction account to be passed in remaining accounts if the config have `enable_first_swap_with_min_fee` as `true` to enjoy minimum swap fee. Else, it will charge normal fee.
+- Standalize error code for quoting in swap exact in and swap exact out when bonding curve is not enough liquidity.
+- Charge protocol migration fee upon migration. It take a cut from liquidity to be migrated to.
+
+### Removed
+
+- Remove endpoint `protocol_withdraw_surplus`, and merge surplus claiming to endpoint `claim_protocol_fee`
+- Remove endpoint `claim_legacy_pool_creation_fee`, and merge `legacy_pool_creation_fee` to endpoint `claim_protocol_pool_creation_fee`
+
+### Breaking Changes
+
+- Add `fee_receiver` field to event `EvtPartnerClaimPoolCreationFee`.
+- Endpoint `claim_protocol_fee` add new params `max_base_amount` and `max_quote_amount`
+- Remove endpoint `protocol_withdraw_surplus`, surplus amount will be merged in endpoint `claim_protocol_fee`
+
+## dynamic_bonding_curve [0.1.8] [PR #151](https://github.com/MeteoraAg/dynamic-bonding-curve/pull/151)
+
+### Added
+
+- Add new endpoint `claim_partner_pool_creation_fee` to allow partners to withdraw the pool creation fee.
+- Add new endpoint `claim_protocol_pool_creation_fee` to allow protocol to withdraw the pool creation fee.
+- `PoolConfig` account now stores `creator_lp_vesting_info` and `partner_lp_vesting_info` fields. Only applicable to DAMM v2 migration option. It store vesting parameters required for `lock_position` cpi during DAMM v2 migration.
+
+### Changed
+
+- Allow partners to configure the `pool_creation_fee` when creating a config. The value is in SOL lamport, so when token creator create pool (throught endpoint `initialize_virtual_pool_with_spl_token` and `initialize_virtual_pool_with_token2022`), they would need to pay `pool_creation_fee` in SOL lamport. Later partner would be able to claim that fee (Meteora would take 10% from that fee)
+- Allow partners to config `partner_lp_vesting_info` and `creator_lp_vesting_info` when creating config key that includes liquidity vesting information if pool is migrated to damm v2 later
+
+### Removed
+
+- Removed the legacy pool creation fee logic from the `initialize_virtual_pool_with_token2022` endpoint.
+- Removed `protocol_fee_percentage` and `referral_fee_percentage` fields from `PoolFeesConfig` field from `PoolConfig` account. Will be using defined constant `PROTOCOL_FEE_PERCENTAGE` and `HOST_FEE_PERCENTAGE` as replacement.
+
+### Breaking Changes
+
+- Endpoints: `create_config`, `initialize_virtual_pool_with_spl_token` and `initialize_virtual_pool_with_token2022` will only allow config that has minimum 10% of locked liquidity in at least 1 day
+- `migration_damm_v2` endpoint require `vesting` accounts for `first_position` and `second_position` if LP vesting was configured.
+
+All breaking belows are related to admin/operator functions
+
+- Remove endpoint `withdraw_lamports_from_pool_authority`
+- Change endpoint `claim_pool_creation_fee` to new endpoint `claim_legacy_pool_creation_fee`
+- Add new `payer` account in admin endpoint `create_claim_fee_operator`, that allow to payer to pay rent fee, instead of admin
+- Add new accounts `signer` and `claim_fee_operator` in endpoint `protocol_withdraw_surplus`, move the endpoint to permissioned
+
 ## dynamic_bonding_curve [0.1.7] [PR #129](https://github.com/MeteoraAg/dynamic-bonding-curve/pull/129)
 
 ### Changed
