@@ -22,7 +22,9 @@ pub struct EvtVirtualPoolMetadata {
     pub virtual_pool_metadata: Pubkey,
     pub virtual_pool: Pubkey,
 }
+
 /// Create config
+#[deprecated(since = "0.1.8")]
 #[event]
 pub struct EvtCreateConfig {
     pub config: Pubkey,
@@ -35,10 +37,10 @@ pub struct EvtCreateConfig {
     pub activation_type: u8,
     pub token_decimal: u8,
     pub token_type: u8,
-    pub partner_locked_lp_percentage: u8,
-    pub partner_lp_percentage: u8,
-    pub creator_locked_lp_percentage: u8,
-    pub creator_lp_percentage: u8,
+    pub partner_permanent_locked_liquidity_percentage: u8,
+    pub partner_liquidity_percentage: u8,
+    pub creator_permanent_locked_liquidity_percentage: u8,
+    pub creator_liquidity_percentage: u8,
     pub swap_base_amount: u64,
     pub migration_quote_threshold: u64,
     pub migration_base_amount: u64,
@@ -143,12 +145,6 @@ pub struct EvtCreateMeteoraMigrationMetadata {
 }
 
 #[event]
-pub struct EvtProtocolWithdrawSurplus {
-    pub pool: Pubkey,
-    pub surplus_amount: u64,
-}
-
-#[event]
 pub struct EvtPartnerWithdrawSurplus {
     pub pool: Pubkey,
     pub surplus_amount: u64,
@@ -190,6 +186,21 @@ pub struct EvtPartnerWithdrawMigrationFee {
 #[event]
 pub struct EvtClaimPoolCreationFee {
     pub pool: Pubkey,
-    pub treasury: Pubkey,
+    pub receiver: Pubkey,
     pub creation_fee: u64,
+}
+
+#[event]
+pub struct EvtPartnerClaimPoolCreationFee {
+    pub pool: Pubkey,
+    pub partner: Pubkey,
+    pub creation_fee: u64,
+    pub fee_receiver: Pubkey,
+}
+
+#[event]
+pub struct EvtClaimProtocolLiquidityMigrationFee {
+    pub pool: Pubkey,
+    pub token_base_amount: u64,
+    pub token_quote_amount: u64,
 }
